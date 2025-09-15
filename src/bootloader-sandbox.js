@@ -1,6 +1,6 @@
 /*!
  * bootloader-sandbox.js
- * Minimal runtime UI/CSS injector for Bootloader-style SVG preview.
+ * Minimal runtime UI/CSS injector for Bootloader-style SVG preview (inline SVG version).
  *
  * Source resolution (in order):
  *   1) window.BootloaderSandboxConfig.source
@@ -22,6 +22,7 @@
    const CFG = window.BootloaderSandboxConfig || {};
    const CACHE = CFG.cache !== false; // default ON; set to false to disable persistence
    const LS_KEYS = { seed: "bldr_seed", iter: "bldr_iter" };
+   const SVG_NS = "http://www.w3.org/2000/svg";
 
    const CSS = `
 :root{
@@ -89,7 +90,8 @@ body{
   opacity:0; pointer-events:none;
 }
 #stage-wrap.is-loading #stage-mask{ opacity:1; }
-#stage{ width:100%; height:100%; display:block; border:0; background:transparent; }
+#stage{ width:100%; height:100%; display:block; background:transparent; overflow:hidden; }
+#stage > svg{ width:100%; height:100%; display:block; }
   `.trim();
 
    function loadPersisted() {
@@ -123,35 +125,15 @@ body{
       };
    }
 
-   // Bootloader fragments (exact)
-   const FRAG_1 = "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cscript%3E%3C!%5BCDATA%5Bconst%20SEED%3D";
-   const FRAG_2 = "n%3Bfunction%20splitmix64(f)%7Blet%20n%3Df%3Breturn%20function()%7Blet%20f%3Dn%3Dn%2B0x9e3779b97f4a7c15n%260xffffffffffffffffn%3Breturn%20f%3D((f%3D(f%5Ef%3E%3E30n)*0xbf58476d1ce4e5b9n%260xffffffffffffffffn)%5Ef%3E%3E27n)*0x94d049bb133111ebn%260xffffffffffffffffn%2CNumber(4294967295n%26(f%5E%3Df%3E%3E31n))%3E%3E%3E0%7D%7Dfunction%20sfc32(f%2Cn%2C%24%2Ct)%7Breturn%20function()%7B%24%7C%3D0%3Blet%20e%3D((f%7C%3D0)%2B(n%7C%3D0)%7C0)%2B(t%7C%3D0)%7C0%3Breturn%20t%3Dt%2B1%7C0%2Cf%3Dn%5En%3E%3E%3E9%2Cn%3D%24%2B(%24%3C%3C3)%7C0%2C%24%3D(%24%3D%24%3C%3C21%7C%24%3E%3E%3E11)%2Be%7C0%2C(e%3E%3E%3E0)%2F4294967296%7D%7Dconst%20sm%3Dsplitmix64(SEED)%2Ca%3Dsm()%2Cb%3Dsm()%2Cc%3Dsm()%2Cd%3Dsm()%2Cn%3D";
-   const FRAG_3 = "%2CBTLDR%3D%7Brnd%3Asfc32(a%2Cb%2Cc%2Cd)%2Cseed%3ASEED%2CiterationNumber%3An%2CisPreview%3An%3D%3D%3D0%26%26SEED%3D%3D%3D0n%2Csvg%3Adocument.documentElement%2Cv%3A%27svg-js%3A0.0.1%27%7D%3B((BTLDR)%3D%3E%7B";
-   const FRAG_4 = "%7D)(BTLDR)%3B%5D%5D%3E%3C%2Fscript%3E%3C%2Fsvg%3E";
-
-   function buildSVGDataURL(code, seedStr, iterationNumber) {
-      let seedBig = 0n;
-      try {
-         const clean = String(seedStr).replace(/\D+/g, "");
-         seedBig = BigInt(clean || "0");
-      } catch { }
-      const encodedCode = encodeURIComponent(code);
-      return FRAG_1 + seedBig + FRAG_2 + Math.max(0, Number(iterationNumber || 0)) + FRAG_3 + encodedCode + FRAG_4;
-   }
-
    /* =========================
       Source Resolution (strict order)
    ========================= */
    function resolveSourceURL() {
-      // 1) config.source
       if (typeof CFG.source === "string" && CFG.source.trim()) return CFG.source.trim();
-      // 2) fallback "sketch.js"
-      // 3) fallback "script.js"
-      return "sketch.js"; // we’ll try this; if it 404s, we'll try script.js next in code fetch
+      return "sketch.js";
    }
 
    async function getSketchCode() {
-      // try config or sketch.js first; if that fails, try script.js
       const primary = resolveSourceURL();
       try {
          const res = await fetch(primary, { cache: "no-store" });
@@ -187,7 +169,7 @@ body{
       const theme = (CFG && CFG.theme) || "light";
       const root = document.documentElement;
       if (theme === "dark") root.setAttribute("data-theme", "dark");
-      else root.removeAttribute("data-theme"); // light default
+      else root.removeAttribute("data-theme");
    }
 
    function el(html) {
@@ -213,11 +195,16 @@ body{
           <button type="button" class="clearbtn" data-target="seed" aria-label="Clear seed">×</button>
         </span>
 
-         <button id="randomSeed" class="iconbtn" title="Randomize seed">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dices" aria-hidden="true"><rect width="12" height="12" x="2" y="10" rx="2" ry="2"></rect><path d="m17.92 14 3.5-3.5a2.24 2.24 0 0 0 0-3l-5-4.92a2.24 2.24 0 0 0-3 0L10 6"></path><path d="M6 18h.01"></path><path d="M18 9h.01">>
-            </path><path d="M10 14h.01"></path><path d="M15 6h.01"></path>
-            </svg>
-       </button>
+        <button id="randomSeed" class="iconbtn" title="Randomize seed">
+          <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+            <rect width="12" height="12" x="2" y="10" rx="2" ry="2"></rect>
+            <path d="m17.92 14 3.5-3.5a2.24 2.24 0 0 0 0-3l-5-4.92a2.24 2.24 0 0 0-3 0L10 6"></path>
+            <path d="M6 18h.01"></path>
+            <path d="M18 9h.01"></path>
+            <path d="M10 14h.01"></path>
+            <path d="M15 6h.01"></path>
+          </svg>
+        </button>
 
         <button id="reload" class="iconbtn" title="Refresh preview">
           <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
@@ -234,11 +221,78 @@ body{
    function buildStage() {
       return el(`
       <div id="stage-wrap">
-        <iframe id="stage" sandbox="allow-scripts"
-          allow="accelerometer; camera; gyroscope; microphone; xr-spatial-tracking; midi;"></iframe>
+        <div id="stage" role="img" aria-label="Preview Area"></div>
         <div id="stage-mask" aria-hidden="true"></div>
       </div>
     `);
+   }
+
+   /* =========================
+      Build inline SVG with executable <script>
+   ========================= */
+   function buildInlineBootloaderSVG(code, seedStr, iterationNumber) {
+      // Normalize seed to BigInt-like decimal string
+      let seedBig = "0";
+      try {
+         const clean = String(seedStr).replace(/\D+/g, "");
+         seedBig = String(BigInt(clean || "0"));
+      } catch { /* keep "0" */ }
+
+      const iter = Math.max(0, Number(iterationNumber || 0)) | 0;
+
+      // Create <svg>
+      const svg = document.createElementNS(SVG_NS, "svg");
+      svg.setAttribute("xmlns", SVG_NS);
+      // Fill the container by CSS (#stage > svg { width/height:100% })
+      // Optionally, set a default viewBox so artwork scales:
+      // svg.setAttribute("viewBox", "0 0 1000 1000");
+
+      // Create <script> inside SVG; this WILL execute when appended
+      const script = document.createElementNS(SVG_NS, "script");
+      script.setAttribute("type", "application/javascript");
+      script.textContent = `
+         (() => {
+         // local scope: no globals leak between renders
+         const SEED = ${seedBig}n;
+         function splitmix64(n0){let n=n0;return function(){
+            let z=n = (n + 0x9e3779b97f4a7c15n) & 0xffffffffffffffffn;
+            z = (z ^ (z >> 30n)) * 0xbf58476d1ce4e5b9n & 0xffffffffffffffffn;
+            z = (z ^ (z >> 27n)) * 0x94d049bb133111ebn & 0xffffffffffffffffn;
+            return Number((z ^ (z >> 31n)) & 0xffffffffn) >>> 0;
+         }}
+         function sfc32(a,b,c,d){ return function(){
+            d|=0; let t = (a|=0) + (b|=0) | 0; t = (t + (d|=0)) | 0;
+            d = (d + 1) | 0; a = b ^ (b>>>9); b = (c + (c<<3)) | 0;
+            c = ((c<<21) | (c>>>11)); c = (c + t) | 0;
+            return ((t>>>0) / 4294967296);
+         }; }
+
+         const sm = splitmix64(SEED), a=sm(), b=sm(), c=sm(), d=sm();
+         const n = ${iter};
+
+         // ⬇️ key change: bind to the actual <svg>
+         const svgEl =
+            (document.currentScript && document.currentScript.ownerSVGElement) ||
+            (typeof document !== 'undefined' && document.querySelector('#stage > svg')) ||
+            null;
+
+         const BTLDR = {
+            rnd: sfc32(a,b,c,d),
+            seed: SEED,
+            iterationNumber: n,
+            isPreview: (n===0 && SEED===0n),
+            svg: svgEl,               // ⬅️ not document.documentElement
+            v: 'svg-js:0.0.1'
+         };
+
+         (function(BTLDR){
+            ${code}
+         })(BTLDR);
+         })();
+         `.trim();
+
+      svg.appendChild(script);
+      return svg;
    }
 
    /* =========================
@@ -268,7 +322,6 @@ body{
       // helpers tied to stage
       const startLoading = () => stageWrap.classList.add("is-loading");
       const stopLoading = () => stageWrap.classList.remove("is-loading");
-      stage.addEventListener("load", stopLoading);
 
       // initialize values (URL > storage > defaults)
       if (params.has("seed")) {
@@ -291,20 +344,22 @@ body{
       async function render() {
          try {
             startLoading();
+            // Clear previous SVG (if any)
+            stage.replaceChildren();
+
             const code = await getSketchCode();
-            const url = buildSVGDataURL(code, seedInput.value, iterInput.value);
-            stage.src = url;
+            const svg = buildInlineBootloaderSVG(code, seedInput.value, iterInput.value);
+            stage.appendChild(svg);
+
+            // let the script run; hide the veil next frame
+            requestAnimationFrame(stopLoading);
          } catch (err) {
             stopLoading();
-            const doc = stage.contentDocument || stage.contentWindow?.document;
-            if (doc) {
-               doc.open();
-               doc.write(
-                  `<pre style="color:#333;background:#fafafa;padding:16px;margin:0;">${String(err).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]))
-                  }</pre>`
-               );
-               doc.close();
-            }
+            // Show error in the stage
+            const pre = document.createElement("pre");
+            pre.style.cssText = "color:#333;background:#fafafa;padding:16px;margin:0;white-space:pre-wrap;overflow:auto;";
+            pre.textContent = String(err);
+            stage.replaceChildren(pre);
             console.error(err);
          }
       }
