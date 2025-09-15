@@ -89,10 +89,11 @@ Set on `window.BootloaderSandboxConfig` **before** loading the script:
 
 * Bootloader site: [https://bootloader.art](https://bootloader.art)
 * Docs: [https://bootloader.art/help](https://bootloader.art/help)
-* Bootloader monorepo (upstream): [https://github.com/objkt-com/bootloader-monorepo](https://github.com/objkt-com/bootloader-monorepo)
+* Bootloader monorepo: [https://github.com/objkt-com/bootloader-monorepo](https://github.com/objkt-com/bootloader-monorepo)
 
 ---
 
 ## License
 
-MIT — do what you want, attribution appreciated.
+MIT — attribution appreciated.
+
