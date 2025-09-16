@@ -39,16 +39,12 @@ Drop one script tag and point it at your generator file — works in any code ed
   </body>
 </html>
 ```
-
-> Tip: add a version/hash during development to bust cache, e.g.
-> `.../bootloader-sandbox.min.js?v=dev123`
-
 ---
 
 ## What it does
 
-* Injects a minimal header UI (seed, iteration, refresh, randomize).
-* Renders your generator code into a Bootloader-style SVG preview (iframe).
+* Injects a minimal header UI.
+* Renders your generator code into a Bootloader-style SVG preview.
 * Optional **dark/light** theme.
 * Optional **localStorage** persistence for seed & iteration.
 
@@ -96,4 +92,5 @@ Set on `window.BootloaderSandboxConfig` **before** loading the script:
 ## License
 
 MIT — attribution appreciated.
+
 
